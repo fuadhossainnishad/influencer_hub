@@ -1,21 +1,27 @@
+'use client'
 import React from "react";
-import LoginForm from "./_components/loginForm";
 import Link from "next/link";
+import Image from "next/image";
+import { useSearchParams } from "next/navigation";
+import EmailVeirfyForm from "./_components/emailVeirfyForm";
 
-export default function LoginPage() {
+export default function ForgotPasswordPage() {
+  // const searchParam = useSearchParams()
+  // const types: string = searchParam.get("type") === 'forgot' ? 'forgot' : 'signup'
+  // const title = types === "login" ? "Continue with your email" : "Create New Account";
   return (
-    <main className="space-y-7 w-full items-center">
+    <main className="w-full space-y-7 items-center flex flex-col">
       <div className="space-y-5 text-center w-full flex flex-col items-center">
         <h1 className="text-2xl  font-bold text-[#103F73]  ">
-          Continue with your email/username and password        </h1>
+          Continue with your email
+        </h1>
       </div>
-      <LoginForm />
-
+      <EmailVeirfyForm />
       <div className="flex flex-col items-center">
         <p className="text-sm text-gray-700">
           Don’t have an account?{" "}
-          <Link href="/auth?type=signup" className="text-blue-600 hover:underline">
-            Sign Up
+          <Link href="/auth?type=login" className="text-blue-600 hover:underline">
+            Sign in
           </Link>
         </p>
 

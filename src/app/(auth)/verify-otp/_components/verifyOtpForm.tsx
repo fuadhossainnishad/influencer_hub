@@ -28,7 +28,7 @@ export default function VerifyOtpForm() {
       toast.error("Please enter the complete OTP");
       return;
     }
-          router.push("/reset-password");
+          router.push("/signup");
 
 
     const res = await apiCall(TMethods.post, apiList.verifyOtp, {
@@ -131,7 +131,7 @@ export default function VerifyOtpForm() {
       )} */}
       <Button
         type="button"
-        className="h-10  px-[30px] py-[10px] rounded-md bg-gradient-to-b from-[#1C75AD] to-[#083D70]  text-sm font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+        className="h-10  px-[30px] py-2.5 rounded-md bg-linear-to-b from-[#1C75AD] to-[#083D70]  text-sm font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
         onClick={() => verifyOtp(otp)}
         disabled={timer === 0 || otp.some((digit) => digit === "")}
       >

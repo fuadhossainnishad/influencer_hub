@@ -12,7 +12,7 @@ import { FieldValues, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 export default function LoginForm() {
-  const [showPassword, setShowPassword] = useState(false); // State for password visibility
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
   const {
@@ -22,22 +22,29 @@ export default function LoginForm() {
   } = useForm();
 
   const onSubmit = async (data: FieldValues) => {
-    console.log("Email:", data.email);
-    console.log("Password:", data.password);
-    router.push("/dashboard");
+    try {
+      const res = await apiCall(TMethods.post, apiList.login, data);
 
-    const res = await apiCall(TMethods.post, apiList.login, data);
-    console.log(res);
+      console.log("Login response:", res);
 
-    if (!res.success) {
-      toast.error("Wrong login credentials");
-      return;
+      if (!res.success) {
+        toast.error(res.message || "Wrong login credentials");
+        return;
+      }
+
+      sessionStorage.setItem("token", res.data.token);
+
+      toast.success("Signed in successfully");
+
+      router.push("/home");
+
+    } catch (error) {
+      console.log("API error:", error);
+      toast.error("Server error. Try again.");
     }
-
-    sessionStorage.setItem("token", res.data.token);
-    toast.success("Signed in successfully");
-    router.push("/dashboard");
   };
+
+
 
   return (
     <form
@@ -49,13 +56,14 @@ export default function LoginForm() {
           htmlFor="email"
           className="block text-sm font-medium text-[#5C5C5C]"
         >
-          Email address
+          Email or username
         </label>
         <Input
           id="email"
           type="email"
+          placeholder="Enter email or username"
           {...register("email", { required: "Email is required" })}
-          className="h-12 w-full rounded-md border border-gray-300 px-3 py-2 text-sm placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="h-12 w-full rounded-md border border-border-auth px-3 py-2 text-sm placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
         {errors.email && (
           <p className="text-red-500 text-sm">
@@ -74,8 +82,9 @@ export default function LoginForm() {
           <Input
             id="password"
             type={showPassword ? "text" : "password"}
+            placeholder="Enter password"
             {...register("password", { required: "Password is required" })}
-            className="h-12 w-full rounded-md border border-gray-300 px-3 py-2 pr-10 text-sm placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="h-12 w-full rounded-md border border-border-auth px-3 py-2 pr-10 text-sm placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
           <button
             type="button"
@@ -100,14 +109,14 @@ export default function LoginForm() {
         <div className="flex items-center space-x-2">
           <Checkbox
             id="remember"
-            className="h-4 w-4 rounded border-gray-300 text-white data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+            className="h-4 w-4 rounded border-border-auth text-white data-[state=checked]:bg-primary data-[state=checked]:border-primary"
           />
           <label htmlFor="remember" className="text-sm text-secondary">
             Remember Password
           </label>
         </div>
         <Link
-          href="/forgot-password"
+          href="/verify-email"
           className="text-sm font-medium text-blue-600 hover:text-blue-500"
         >
           Forgot Password?
@@ -115,7 +124,7 @@ export default function LoginForm() {
       </div>
       <Button
         type="submit"
-        className="h-10  px-[20px] py-[10px] rounded-md bg-gradient-to-b from-[#1C75AD] to-[#083D70]  text-sm font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+        className="h-10 w-full  px-5 py-5 rounded-lg bg-bg-btn  text-sm font-medium text-white hover:bg-bg-btn/70 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
       >
         Sign In
       </Button>

@@ -1,6 +1,6 @@
 const apiList = {
     signup: "/auth/signup",
-    login: "/auth/login",
+    login: "/auth/login.php",
     forgotPassword: "/auth/forgot_password",
     verifyOtp: "/auth/verify_otp",
     resetPassword: "/auth/reset_password",
@@ -10,7 +10,7 @@ const apiList = {
     track: "/track",
     user: "/user",
     earnings: "/earnings",
-    video:"/video"
+    video: "/video"
 }
 
 export default apiList

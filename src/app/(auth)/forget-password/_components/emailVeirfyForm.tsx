@@ -8,7 +8,7 @@ import React, { useState } from "react";
 import { FieldValues, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
-export default function ForgotPasswordForm() {
+export default function EmailVeirfyForm() {
   const [sent, setSent] = useState(false);
   const router = useRouter();
 
@@ -63,7 +63,7 @@ export default function ForgotPasswordForm() {
 
       <Button
         type="submit"
-        className="h-10 px-[20px] py-[10px] rounded-md bg-gradient-to-b from-[#1C75AD] to-[#083D70]  text-sm font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+        className="h-10 px-5 py-2.5 rounded-md bg-linear-to-b from-[#1C75AD] to-[#083D70]  text-sm font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
         onClick={() => setSent(true)}
       >
         {sent ? "Otp Sending..." : "Send Otp"}

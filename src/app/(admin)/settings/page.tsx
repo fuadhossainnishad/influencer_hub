@@ -62,7 +62,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <main className="p-6 space-y-6 bg-white border-[1px] border-[#E5E7EB] rounded-xl grow">
+    <main className="p-6 space-y-6 bg-white border border-[#E5E7EB] rounded-xl grow">
       <h2 className="text-xl text-text-settings font-semibold leading-7 bg-white  rounded-xl w-full">
         Settings
       </h2>
@@ -72,11 +72,10 @@ export default function SettingsPage() {
             <button
               key={idx}
               onClick={() => setActiveTab(idx)}
-              className={`px-4 py-2 text-sm font-medium border-b-2 ${
-                activeTab === idx
-                  ? "border-text-clicked2 text-text-settings-content"
-                  : "border-transparent text-text-settings-content-inactive hover:text-black"
-              }`}
+              className={`px-4 py-2 text-sm font-medium border-b-2 ${activeTab === idx
+                ? "border-text-clicked2 text-text-settings-content"
+                : "border-transparent text-text-settings-content-inactive hover:text-black"
+                }`}
             >
               {tab}
             </button>
@@ -103,7 +102,7 @@ export default function SettingsPage() {
         <div className="mt-6">
           <Button
             onClick={handleSave}
-            className="w-full bg-gradient-to-b from-button to-button2 hover:bg-green-700 text-white"
+            className="w-full bg-linear-to-b from-button to-button2 hover:bg-green-700 text-white"
           >
             Save Changes
           </Button>
