@@ -1,8 +1,9 @@
 const apiList = {
-    signup: "/auth/signup",
+    signup: "/auth/signup.php",
     login: "/auth/login.php",
+    sendOtp: "/auth/sendOtp.php",
     forgotPassword: "/auth/forgot_password",
-    verifyOtp: "/auth/verify_otp",
+    verifyOtp: "/auth/verifyOtp.php",
     resetPassword: "/auth/reset_password",
     updatePassword: "/auth/update_password",
     settings: "/settings",

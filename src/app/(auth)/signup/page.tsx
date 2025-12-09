@@ -5,6 +5,7 @@ import Link from "next/link";
 import SignupForm from "./_components/signupForm";
 
 export default function SignupPage() {
+
   return (
     <main className="space-y-7 w-full flex flex-col items-center px-4 max-w-md mx-auto">
       <div className="space-y-5 text-center w-full flex flex-col items-center">

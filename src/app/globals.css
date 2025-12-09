@@ -70,3 +70,11 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
 }
+
+.hero {
+  background-image: url("/assets/images/homeCover.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  height: "70%";
+}

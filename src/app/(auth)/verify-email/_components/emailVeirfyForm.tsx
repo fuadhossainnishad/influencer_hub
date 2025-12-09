@@ -22,7 +22,7 @@ export default function EmailVeirfyForm() {
     console.log("Email:", data.email);
     router.push("/verify-otp");
     sessionStorage.setItem("email", data.email);
-    const res = await apiCall(TMethods.post, apiList.forgotPassword, data);
+    const res = await apiCall(TMethods.post, apiList.sendOtp, data);
     console.log(res);
 
     if (!res.success) {
@@ -31,7 +31,7 @@ export default function EmailVeirfyForm() {
       return;
     }
 
-    sessionStorage.setItem("token", res.data.token);
+    sessionStorage.setItem("token", res.data.token!);
     toast.success("Otp sent to your email");
     router.push("/verify-otp");
   };

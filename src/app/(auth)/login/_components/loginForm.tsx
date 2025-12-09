@@ -36,7 +36,7 @@ export default function LoginForm() {
 
       toast.success("Signed in successfully");
 
-      router.push("/home");
+      router.push("/user");
 
     } catch (error) {
       console.log("API error:", error);

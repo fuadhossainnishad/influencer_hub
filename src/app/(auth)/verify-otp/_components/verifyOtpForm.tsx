@@ -23,34 +23,37 @@ export default function VerifyOtpForm() {
     return () => clearInterval(interval);
   }, []);
 
-  const verifyOtp = async (otp: string[]) => {
-    if (!otp || otp.some((digit) => digit === "")) {
+  const verifyOtp = async () => {
+    if (otp.some(d => d === "")) {
       toast.error("Please enter the complete OTP");
       return;
     }
-          router.push("/signup");
 
+    const email = sessionStorage.getItem("email");
+    if (!email) {
+      toast.error("Email not found. Please go back and enter your email.");
+      return;
+    }
 
     const res = await apiCall(TMethods.post, apiList.verifyOtp, {
-      email: localStorage.getItem("email"),
+      email,
       otp: otp.join(""),
     });
 
     if (!res.success) {
-
       toast.error(res.message || "Invalid OTP");
       return;
     }
 
     toast.success("OTP Verified Successfully!");
-    router.push("/reset-password");
+    router.push("/signup");
   };
 
   const resendOtp = async () => {
     setIsOtpResent(true);
     setTimer(59);
 
-    const res = await apiCall(TMethods.post, apiList.verifyOtp, {
+    const res = await apiCall(TMethods.post, apiList.sendOtp, {
       email: localStorage.getItem("email"),
     });
 
@@ -132,7 +135,7 @@ export default function VerifyOtpForm() {
       <Button
         type="button"
         className="h-10  px-[30px] py-2.5 rounded-md bg-linear-to-b from-[#1C75AD] to-[#083D70]  text-sm font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-        onClick={() => verifyOtp(otp)}
+        onClick={() => verifyOtp()}
         disabled={timer === 0 || otp.some((digit) => digit === "")}
       >
         Verify OTP

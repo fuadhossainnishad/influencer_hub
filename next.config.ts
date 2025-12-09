@@ -13,7 +13,7 @@ const nextConfig: NextConfig = {
   redirects: async () => [
     {
       source: '/',
-      destination: '/auth',
+      destination: '/home',
       permanent: false
     }
   ]
