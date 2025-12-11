@@ -1,6 +1,7 @@
 import React from "react";
 import Image from "next/image";
 import { Edit } from "lucide-react";
+import Link from "next/link";
 
 export default function ProfilePage() {
     return (
@@ -52,7 +53,12 @@ export default function ProfilePage() {
                 <p className="text-gray-700"><span className="font-medium">Phone:</span> 03764 4756 3864</p>
                 <p className="text-gray-700"><span className="font-medium">Email:</span> alimohammad45@gmail.com</p>
             </section>
-
+            <Link
+                href="/login"
+                className="mt-6 inline-block w-full text-center bg-red-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-red-700 transition"
+            >
+                Logout
+            </Link>
         </main>
     );
 }

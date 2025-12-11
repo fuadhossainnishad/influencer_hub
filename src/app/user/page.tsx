@@ -1,9 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { getAllCampaigns } from "@/services/campaign.service";
+
 
 const myCampaigns = [
   {
@@ -39,45 +42,45 @@ const otherCampaigns = [
   },
 ];
 
+
 export default function Dashboard() {
-  const router = useRouter()
+  const router = useRouter();
+
+  const [campaigns, setCampaigns] = useState(otherCampaigns);
+
+  useEffect(() => {
+    fetchCampaigns();
+  }, []);
+
+  const fetchCampaigns = async () => {
+    const response = await getAllCampaigns();
+
+    if (response.success) {
+      setCampaigns(response.data);
+    }
+  };
+
   return (
     <div className="p-6 space-y-10">
+      <h1 className="text-2xl font-semibold mb-2">
+        Welcome back, <span className="text-blue-600">Luna Glow!</span>
+      </h1>
 
-      {/* Welcome Section */}
-      <div>
-        <h1 className="text-2xl font-semibold mb-2">
-          Welcome back, <span className="text-blue-600">Luna Glow!</span>
-        </h1>
-        <p className="text-gray-600">Manage your campaigns and influencers.</p>
+      <Button className="mt-4" onClick={() => router.push("/user/campaign/createCampaign")}>
+        Create New Campaign
+      </Button>
 
-        <Button className="mt-4" onClick={() => { router.push('/user/campaign/createCampaign') }}>Create New Campaign</Button>
+      {/* Integrated API data */}
+      <CampaignSection title="Other Campaigns" campaigns={campaigns} />
 
-        <p className="text-sm text-gray-500 mt-2 max-w-md">
-          Launch targeted influencer campaigns that match your business goals and budget.
-        </p>
-      </div>
-
-      {/* My Campaigns Section */}
-      <CampaignSection title="Your Campaigns" campaigns={myCampaigns} />
-
-      {/* Other Campaigns Section */}
-      <CampaignSection title="Other Campaigns" campaigns={otherCampaigns} />
-
-      {/* Influencer Lists */}
       <InfluencerSection title="Top Rated Influencers" />
     </div>
   );
 }
 
 /* ------------------ CAMPAIGN SECTION ------------------ */
-function CampaignSection({
-  title,
-  campaigns,
-}: {
-  title: string;
-  campaigns: typeof myCampaigns;
-}) {
+function CampaignSection({ title, campaigns }: { title: string; campaigns: any[] }) {
+  const router = useRouter()
   return (
     <section className="space-y-4">
       <div className="flex justify-between items-center">
@@ -87,32 +90,34 @@ function CampaignSection({
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {campaigns.map((c) => (
-          <Card
-            key={c.id}
-            className="rounded-xl shadow-sm hover:shadow-md transition cursor-pointer"
-          >
+          <Card key={c.id} className="rounded-xl shadow-sm hover:shadow-md transition">
             <CardContent className="p-4 space-y-3">
+
+              {/* Thumbnail */}
+              <Image
+                src={`http://localhost/influencer_hub_server/${c.thumbnail}`}
+                alt={c.title}
+                width={400}
+                height={200}
+                className="rounded-lg w-full h-40 object-cover"
+              />
 
               <h3 className="font-semibold text-lg">{c.title}</h3>
 
               <p className="text-sm text-gray-600">
-                <span className="font-medium">Budget:</span> {c.budget}
+                <span className="font-medium">Budget:</span> ${c.budget}
               </p>
 
               <p className="text-sm text-gray-600">
-                <span className="font-medium">Influencers:</span> {c.influencers}
+                <span className="font-medium">Created:</span> {c.created_at}
               </p>
 
-              <span
-                className={`inline-block px-3 py-1 rounded-md text-xs font-medium ${c.status === "Active"
-                  ? "bg-green-100 text-green-700"
-                  : "bg-yellow-100 text-yellow-700"
-                  }`}
+              <Button
+                className="w-full mt-2"
+                onClick={() => router.push(`/user/campaign/${c.id}`)}
               >
-                {c.status}
-              </span>
-
-              <Button className="w-full mt-2">View Campaign</Button>
+                View Campaign
+              </Button>
             </CardContent>
           </Card>
         ))}

@@ -4,9 +4,14 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import apiList from "@/services/apiList";
+import apiCall, { TMethods } from "@/services/apiMethodList";
+import { useRouter } from "next/navigation";
 
 export default function CreateCampaign() {
     const [step, setStep] = useState(1);
+    const [loading, setLoading] = useState(false);
+    const router = useRouter()
 
     const [formData, setFormData] = useState({
         title: "",
@@ -19,7 +24,6 @@ export default function CreateCampaign() {
         creative: null as File | null,
     });
 
-    // Text input handler
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
     ) => {
@@ -27,7 +31,6 @@ export default function CreateCampaign() {
         setFormData({ ...formData, [name]: value });
     };
 
-    // File input handler
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, files } = e.target;
         if (files && files[0]) {
@@ -40,37 +43,45 @@ export default function CreateCampaign() {
 
     const handleSubmit = async () => {
         const token = localStorage.getItem("token");
-        const payload = new FormData();
+        if (!token) return alert("You must be logged in to create a campaign");
 
+        const payload = new FormData();
         Object.entries(formData).forEach(([key, value]) => {
-            if (value !== null) {
-                payload.append(key, value as any);
-            }
+            if (value !== null) payload.append(key, value as any);
         });
 
-        const res = await fetch(
-            "http://localhost/influencer_hub_server/campaign/createCampaign.php",
-            {
-                method: "POST",
-                body: payload,
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            }
-        );
+        try {
+            setLoading(true);
+            const response = await apiCall<FormData>(
+                TMethods.post,
+                apiList.createCampaign,
+                payload,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`, // Pass the token
+                    },
+                }
+            );
 
-        const data = await res.json();
-        alert(data.success ? "Campaign created successfully!" : data.message);
+            if (response.success) {
+                alert("Campaign created successfully!");
+                router.push('/user')
+            }
+        } catch (error) {
+            console.error(error);
+            alert("An error occurred while creating the campaign");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
-        <div className="max-w-3xl mx-auto p-4 space-y-6">
+        <div className="max-w-3xl mx-auto p-4 space-y-6 bg-white shadow-lg rounded-xl">
             {/* Step 1 */}
             {step === 1 && (
                 <div className="space-y-4">
                     <h2 className="text-xl font-bold">Step 1: Campaign Details</h2>
 
-                    {/* Title */}
                     <div>
                         <label className="text-sm font-medium">Campaign Title *</label>
                         <Input
@@ -81,7 +92,6 @@ export default function CreateCampaign() {
                         />
                     </div>
 
-                    {/* Description */}
                     <div>
                         <label className="text-sm font-medium">Description *</label>
                         <Textarea
@@ -96,7 +106,6 @@ export default function CreateCampaign() {
                         </p>
                     </div>
 
-                    {/* Goal */}
                     <div>
                         <label className="text-sm font-medium">Goal *</label>
                         <Textarea
@@ -106,12 +115,9 @@ export default function CreateCampaign() {
                             placeholder="Write campaign goal..."
                             maxLength={500}
                         />
-                        <p className="text-xs text-gray-500">
-                            {formData.goal.length}/500
-                        </p>
+                        <p className="text-xs text-gray-500">{formData.goal.length}/500</p>
                     </div>
 
-                    {/* Thumbnail */}
                     <div>
                         <label className="text-sm font-medium">Thumbnail</label>
                         <Input
@@ -120,9 +126,7 @@ export default function CreateCampaign() {
                             accept="image/png, image/jpeg"
                             onChange={handleFileChange}
                         />
-                        <p className="text-xs text-muted-foreground">
-                            Supported: PNG, JPEG
-                        </p>
+                        <p className="text-xs text-gray-400">Supported: PNG, JPEG</p>
                     </div>
 
                     <div className="flex justify-end">
@@ -136,7 +140,6 @@ export default function CreateCampaign() {
                 <div className="space-y-4">
                     <h2 className="text-xl font-bold">Step 2: Budget & Timeline</h2>
 
-                    {/* Budget */}
                     <div>
                         <label className="text-sm font-medium">Budget *</label>
                         <Input
@@ -147,9 +150,8 @@ export default function CreateCampaign() {
                         />
                     </div>
 
-                    {/* Timeline */}
                     <div>
-                        <label className="text-sm font-medium">Campaign Timeline (Days) *</label>
+                        <label className="text-sm font-medium">Timeline (Days) *</label>
                         <Input
                             name="timeline"
                             value={formData.timeline}
@@ -170,7 +172,6 @@ export default function CreateCampaign() {
                 <div className="space-y-4">
                     <h2 className="text-xl font-bold">Step 3: Deliverables & Creative</h2>
 
-                    {/* Deliverables */}
                     <div>
                         <label className="text-sm font-medium">Deliverables *</label>
                         <Textarea
@@ -185,7 +186,6 @@ export default function CreateCampaign() {
                         </p>
                     </div>
 
-                    {/* Creative File */}
                     <div>
                         <label className="text-sm font-medium">Creative Guidelines</label>
                         <Input
@@ -194,14 +194,14 @@ export default function CreateCampaign() {
                             accept="application/pdf,image/png,image/jpeg"
                             onChange={handleFileChange}
                         />
-                        <p className="text-xs text-muted-foreground">
-                            Supported: PDF, PNG, JPEG
-                        </p>
+                        <p className="text-xs text-gray-400">Supported: PDF, PNG, JPEG</p>
                     </div>
 
                     <div className="flex justify-between">
                         <Button onClick={prev}>Previous</Button>
-                        <Button onClick={handleSubmit}>Create Now</Button>
+                        <Button onClick={handleSubmit} disabled={loading}>
+                            {loading ? "Creating..." : "Create Campaign"}
+                        </Button>
                     </div>
                 </div>
             )}

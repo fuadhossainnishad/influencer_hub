@@ -7,6 +7,7 @@ const apiList = {
     resetPassword: "/auth/reset_password",
     updatePassword: "/auth/update_password",
     createCampaign: "/campaign/createCampaign.php",
+    getCampaign: "/campaign/getCampaign.php",
     subscription: "/subscription",
     track: "/track",
     user: "/user",
