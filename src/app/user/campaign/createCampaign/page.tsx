@@ -52,18 +52,20 @@ export default function CreateCampaign() {
 
         try {
             setLoading(true);
-            const response = await apiCall<FormData>(
+            const response = await apiCall(
                 TMethods.post,
                 apiList.createCampaign,
                 payload,
                 {
                     headers: {
-                        Authorization: `Bearer ${token}`, // Pass the token
+                        Authorization: `Bearer ${token}`,
                     },
                 }
             );
 
-            if (response.success) {
+            console.log(response);
+
+            if (response.success === true) {
                 alert("Campaign created successfully!");
                 router.push('/user')
             }

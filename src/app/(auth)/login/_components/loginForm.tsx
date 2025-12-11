@@ -33,6 +33,8 @@ export default function LoginForm() {
       }
 
       localStorage.setItem("token", res.data.token);
+      localStorage.setItem("userId", res.data.user.id.toString());
+
       console.log("token:", res.data.token)
 
       toast.success("Signed in successfully");

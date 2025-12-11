@@ -8,6 +8,7 @@ const apiList = {
     updatePassword: "/auth/update_password",
     createCampaign: "/campaign/createCampaign.php",
     getCampaign: "/campaign/getCampaign.php",
+    getMyCampaigns: "/campaign/getMyCampaign.php",
     subscription: "/subscription",
     track: "/track",
     user: "/user",

@@ -29,5 +29,4 @@ const apiCall = async <T>(
 
   return res.data;
 };
-
 export default apiCall;

@@ -5,58 +5,112 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { getAllCampaigns } from "@/services/campaign.service";
+import axios from "axios";
+import { getAllCampaigns, getMyCampaigns } from "@/services/campaign.service";
 
+interface Campaign {
+  id: number;
+  user_id: number;
+  title: string;
+  description: string;
+  budget: string;
+  created_at: string;
+  thumbnail: string;
+  creative: string;
+}
 
-const myCampaigns = [
-  {
-    id: 1,
-    title: "Winter Fashion Promo",
-    budget: "$500",
-    status: "Active",
-    influencers: 12,
-  },
-  {
-    id: 2,
-    title: "Food Review Boost",
-    budget: "$350",
-    status: "Pending",
-    influencers: 6,
-  },
-];
-
-const otherCampaigns = [
-  {
-    id: 3,
-    title: "Travel Essentials Launch",
-    budget: "$400",
-    status: "Active",
-    influencers: 8,
-  },
-  {
-    id: 4,
-    title: "Tech Gadget Promo",
-    budget: "$600",
-    status: "Active",
-    influencers: 10,
-  },
-];
-
+interface User {
+  id: number;
+  name: string;
+  username: string;
+  location?: string;
+  phone?: string;
+  email?: string;
+  business_category?: string;
+  profile_image?: string;
+}
+interface AppliedCampaign {
+  application_id: number;
+  campaign_id: number;
+  title: string;
+  description: string;
+  budget: string;
+  thumbnail: string;
+  created_at: string;
+  status: 'applied' | 'approved' | 'rejected';
+  applied_at: string; // <-- add this
+}
 
 export default function Dashboard() {
   const router = useRouter();
 
-  const [campaigns, setCampaigns] = useState(otherCampaigns);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [myCampaigns, setMyCampaigns] = useState<Campaign[]>([]);
+  const [userId, setUserId] = useState<number | null>(null);
+  const [influencers, setInfluencers] = useState<User[]>([]);
+  const [appliedCampaigns, setAppliedCampaigns] = useState<AppliedCampaign[]>([]);
 
   useEffect(() => {
     fetchCampaigns();
+    fetchMyCampaigns();
+    fetchInfluencers();
+    fetchAppliedCampaigns();
   }, []);
+  const fetchAppliedCampaigns = async () => {
+    try {
+      const userId = localStorage.getItem("userId");
+      if (!userId) return;
+
+      const res = await axios.get(`http://localhost/influencer_hub_server/campaign/getMyAppliedCampaigns.php?user_id=${userId}`);
+      console.log("Applied campaigns response:", res.data);
+      if (res.data.success) setAppliedCampaigns(res.data.data);
+    } catch (error) {
+      console.error("Failed to fetch applied campaigns:", error);
+    }
+  };
+  const fetchMyCampaigns = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    const response = await getMyCampaigns(token);
+    if (response.success) {
+      setMyCampaigns(response.data);
+      setUserId(response.data[0]?.user_id || null);
+    }
+  };
 
   const fetchCampaigns = async () => {
     const response = await getAllCampaigns();
+    if (response.success) setCampaigns(response.data);
+  };
 
-    if (response.success) {
-      setCampaigns(response.data);
+  const fetchInfluencers = async () => {
+    try {
+      const res = await axios.get("http://localhost/influencer_hub_server/users/getAllUsers.php");
+      if (res.data.success) setInfluencers(res.data.data);
+    } catch (error) {
+      console.error("Failed to fetch influencers:", error);
+    }
+  };
+
+  const applyCampaign = async (campaignId: number) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const formData = new FormData();
+      formData.append("campaign_id", campaignId.toString());
+
+      const res = await axios.post(
+        "http://localhost/influencer_hub_server/campaign/applyCampaign.php",
+        formData,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      alert(res.data.message);
+    } catch (error) {
+      console.error(error);
+      alert("Failed to apply");
     }
   };
 
@@ -69,18 +123,20 @@ export default function Dashboard() {
       <Button className="mt-4" onClick={() => router.push("/user/campaign/createCampaign")}>
         Create New Campaign
       </Button>
+      <AppliedCampaignsSection campaigns={appliedCampaigns} />
 
-      {/* Integrated API data */}
-      <CampaignSection title="Other Campaigns" campaigns={campaigns} />
+      <CampaignSection title="My Campaigns" campaigns={myCampaigns} userId={userId} />
+      <CampaignSection title="Other Campaigns" campaigns={campaigns} userId={userId} applyCampaign={applyCampaign} />
 
-      <InfluencerSection title="Top Rated Influencers" />
+      <InfluencerSection title="Influencers" influencers={influencers} />
     </div>
   );
 }
 
-/* ------------------ CAMPAIGN SECTION ------------------ */
-function CampaignSection({ title, campaigns }: { title: string; campaigns: any[] }) {
-  const router = useRouter()
+// ------------------ CAMPAIGN SECTION ------------------
+function CampaignSection({ title, campaigns, userId, applyCampaign }: { title: string; campaigns: Campaign[]; userId: number | null; applyCampaign?: (id: number) => void }) {
+  const router = useRouter();
+
   return (
     <section className="space-y-4">
       <div className="flex justify-between items-center">
@@ -91,9 +147,8 @@ function CampaignSection({ title, campaigns }: { title: string; campaigns: any[]
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {campaigns.map((c) => (
           <Card key={c.id} className="rounded-xl shadow-sm hover:shadow-md transition">
-            <CardContent className="p-4 space-y-3">
+            <CardContent className="p-4 space-y-3 flex flex-col">
 
-              {/* Thumbnail */}
               <Image
                 src={`http://localhost/influencer_hub_server/${c.thumbnail}`}
                 alt={c.title}
@@ -102,22 +157,22 @@ function CampaignSection({ title, campaigns }: { title: string; campaigns: any[]
                 className="rounded-lg w-full h-40 object-cover"
               />
 
-              <h3 className="font-semibold text-lg">{c.title}</h3>
+              <div className="space-y-1">
+                <h3 className="font-semibold text-lg">{c.title}</h3>
+                <p className="text-sm text-gray-600">Budget: ${c.budget}</p>
+                <p className="text-sm text-gray-600">Created: {c.created_at}</p>
+              </div>
 
-              <p className="text-sm text-gray-600">
-                <span className="font-medium">Budget:</span> ${c.budget}
-              </p>
-
-              <p className="text-sm text-gray-600">
-                <span className="font-medium">Created:</span> {c.created_at}
-              </p>
-
-              <Button
-                className="w-full mt-2"
-                onClick={() => router.push(`/user/campaign/${c.id}`)}
-              >
-                View Campaign
-              </Button>
+              <div className="flex flex-col gap-2 mt-2">
+                <Button className="w-full" onClick={() => router.push(`/user/campaign/${c.id}`)}>
+                  View Campaign
+                </Button>
+                {userId && applyCampaign && c.user_id !== userId && (
+                  <Button className="w-full bg-green-500 text-white hover:bg-green-600" onClick={() => applyCampaign(c.id)}>
+                    Apply Now
+                  </Button>
+                )}
+              </div>
             </CardContent>
           </Card>
         ))}
@@ -126,8 +181,10 @@ function CampaignSection({ title, campaigns }: { title: string; campaigns: any[]
   );
 }
 
-/* ------------------ CLEAN INFLUENCER SECTION ------------------ */
-function InfluencerSection({ title }: { title: string }) {
+// ------------------ INFLUENCER SECTION ------------------
+function InfluencerSection({ title, influencers }: { title: string; influencers: User[] }) {
+  const router = useRouter();
+
   return (
     <section className="space-y-4">
       <div className="flex justify-between items-center">
@@ -136,44 +193,85 @@ function InfluencerSection({ title }: { title: string }) {
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-
-        {Array(4).fill("").map((_, i) => (
+        {influencers.map((user) => (
           <Card
-            key={i}
+            key={user.id}
             className="rounded-xl shadow-sm hover:shadow-lg transition cursor-pointer"
+            onClick={() => router.push(`/user/profile/${user.id}`)}
           >
-            <CardContent className="p-4 space-y-4">
+            <CardContent className="p-4 space-y-2">
 
-              {/* Image */}
               <Image
-                src="/user-placeholder.png"
-                alt="Influencer"
+                src={
+                  user.profile_image
+                    ? `http://localhost/influencer_hub_server/${user.profile_image}`
+                    : "/user-placeholder.png"
+                }
+                alt={user.name}
                 width={300}
                 height={200}
-                className="rounded-lg w-full object-cover"
+                className="rounded-lg w-full object-cover h-40"
               />
 
-              {/* Name */}
-              <h3 className="font-semibold text-lg">Sara Afrin</h3>
+              <h3 className="font-semibold text-lg">{user.name}</h3>
+              <p className="text-sm text-gray-500">@{user.username}</p>
 
-              {/* Location */}
-              <p className="text-sm text-gray-500">Dhaka, Bangladesh</p>
+              {user.location && (
+                <p className="text-sm text-gray-500">{user.location}</p>
+              )}
 
-              {/* Rating */}
-              <div className="flex items-center gap-1 text-yellow-500 font-medium">
-                ⭐ 4.8
-              </div>
-
-              {/* Skills */}
-              <div className="flex gap-2 text-sm">
-                <span className="px-2 py-1 bg-gray-100 rounded-md">Fashion</span>
-                <span className="px-2 py-1 bg-gray-100 rounded-md">Makeup</span>
-              </div>
+              {user.business_category && (
+                <span className="px-2 py-1 bg-gray-100 rounded-md text-sm inline-block">
+                  {user.business_category}
+                </span>
+              )}
 
             </CardContent>
           </Card>
         ))}
+      </div>
+    </section>
+  );
+}
 
+function AppliedCampaignsSection({ campaigns }: { campaigns: AppliedCampaign[] }) {
+  const router = useRouter();
+
+  if (campaigns.length === 0) return null;
+
+  return (
+    <section className="space-y-4">
+      <h2 className="text-xl font-semibold">My Applied Campaigns</h2>
+
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {campaigns.map((c) => (
+          <Card key={c.application_id} className="rounded-xl shadow-sm hover:shadow-md transition">
+            <CardContent className="p-4 space-y-3 flex flex-col">
+              <Image
+                src={`http://localhost/influencer_hub_server/${c.thumbnail}`}
+                alt={c.title}
+                width={400}
+                height={200}
+                className="rounded-lg w-full h-40 object-cover"
+              />
+
+              <div className="space-y-1">
+                <h3 className="font-semibold text-lg">{c.title}</h3>
+                <p className="text-sm text-gray-600">Budget: ${c.budget}</p>
+                <p className="text-sm text-gray-600">Applied: {new Date(c.applied_at).toLocaleDateString()}</p>
+                <p className={`text-sm font-semibold ${c.status === 'approved' ? 'text-green-600' :
+                  c.status === 'rejected' ? 'text-red-600' : 'text-yellow-600'
+                  }`}>
+                  Status: {c.status.toUpperCase()}
+                </p>
+              </div>
+
+              <Button className="w-full" onClick={() => router.push(`/user/campaign/${c.campaign_id}`)}>
+                View Campaign
+              </Button>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     </section>
   );
