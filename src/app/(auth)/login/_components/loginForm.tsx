@@ -119,7 +119,7 @@ export default function LoginForm() {
           </label>
         </div>
         <Link
-          href="/verify-email"
+          href="/verify-email2"
           className="text-sm font-medium text-blue-600 hover:text-blue-500"
         >
           Forgot Password?

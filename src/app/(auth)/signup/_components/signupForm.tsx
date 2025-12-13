@@ -14,7 +14,7 @@ export default function SignupForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const email = sessionStorage.getItem("email") || "";
+  const email = localStorage.getItem("email") || "";
 
   const { register, handleSubmit, formState: { errors } } = useForm();
 

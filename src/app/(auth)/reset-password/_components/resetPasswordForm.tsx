@@ -1,4 +1,5 @@
 "use client";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import apiList from "@/services/apiList";
@@ -9,122 +10,83 @@ import React, { useState } from "react";
 import { FieldValues, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
-export type TResetPassword = {
-  password: string;
-  confirmPassword: string;
-};
-
 export default function ResetPasswordForm() {
-  const [showPassword, setShowPassword] = useState(false); // State for password visibility
-
-  const [sent, setSent] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm();
 
-  const onSubmit = async (data: FieldValues) => {
-    console.log("Email:", data.newPassword);
-    console.log("Email:", data.confirmPassword);
+  const password = watch("password");
 
-    router.push("/login");
-    sessionStorage.setItem("email", data.email);
-    const res = await apiCall(TMethods.post, apiList.resetPassword, data);
+const onSubmit = async (data: FieldValues) => {
+  const email = localStorage.getItem("email");
+  const otp = localStorage.getItem("otp");
+
+  if (!email || !otp) return toast.error("Email/OTP missing. Start again.");
+
+  if (data.password !== data.confirmPassword) {
+    return toast.error("Passwords do not match");
+  }
+
+  try {
+    const res = await apiCall(TMethods.post, apiList.resetPassword, {
+      email,
+      otp,
+      password: data.password,
+    });
+
+    if (!res.success) return toast.error(res.message || "Reset failed");
     console.log(res);
 
-    if (!res.success) {
-      toast.error("Otp sent failed");
-      setSent(false);
-      return;
-    }
-
-    sessionStorage.setItem("token", res.data.token);
-    toast.success("Otp sent to your email");
+    toast.success("Password reset successfully!");
+    localStorage.removeItem("otp"); // clear OTP after reset
     router.push("/login");
-  };
+  } catch {
+    toast.error("Server error");
+  }
+};
+
 
   return (
-    <form
-      className="space-y-6 w-full flex flex-col items-center"
-      onSubmit={handleSubmit(onSubmit)}
-    >
+    <form className="space-y-6 w-full flex flex-col items-center" onSubmit={handleSubmit(onSubmit)}>
       <div className="space-y-2 w-full">
-        <label
-          htmlFor="password"
-          className="block text-sm font-medium text-gray-700"
-        >
-          New Password
-        </label>
+        <label className="block text-sm font-medium text-gray-700">New Password</label>
         <div className="relative">
           <Input
-            id="newPassword"
             type={showPassword ? "text" : "password"}
-            {...register("password", { required: "New password is required" })}
-            className="h-12 w-full rounded-md border border-gray-300 px-3 py-2 pr-10 text-sm placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            {...register("password", { required: "New password is required", minLength: 6 })}
+            placeholder="Enter new password"
+            className="h-12 w-full rounded-md border px-3 py-2 pr-10 text-sm"
           />
           <button
             type="button"
             onClick={() => setShowPassword((prev) => !prev)}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-            aria-label="Toggle password visibility"
           >
-            {showPassword ? (
-              <EyeOffIcon className="w-5 aspect-square" />
-            ) : (
-              <EyeIcon className="w-5 h-5" />
-            )}
+            {showPassword ? <EyeOffIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
           </button>
         </div>
-        {errors.password && (
-          <p className="text-red-500 text-sm">
-            {errors.password.message as string}
-          </p>
-        )}
+        {errors.password && <p className="text-red-500 text-sm">{errors.password.message as string}</p>}
       </div>
+
       <div className="space-y-2 w-full">
-        <label
-          htmlFor="password"
-          className="block text-sm font-medium text-gray-700"
-        >
-          New Password
-        </label>
-        <div className="relative">
-          <Input
-            id="confirmPassword"
-            type={showPassword ? "text" : "password"}
-            {...register("password", {
-              required: "Confirm password is required",
-            })}
-            className="h-12 w-full rounded-md border border-gray-300 px-3 py-2 pr-10 text-sm placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword((prev) => !prev)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-            aria-label="Toggle password visibility"
-          >
-            {showPassword ? (
-              <EyeOffIcon className="w-5 aspect-square" />
-            ) : (
-              <EyeIcon className="w-5 h-5" />
-            )}
-          </button>
-        </div>
-        {errors.password && (
-          <p className="text-red-500 text-sm">
-            {errors.password.message as string}
-          </p>
-        )}
+        <label className="block text-sm font-medium text-gray-700">Confirm Password</label>
+        <Input
+          type={showPassword ? "text" : "password"}
+          {...register("confirmPassword", { required: "Confirm your password" })}
+          placeholder="Confirm new password"
+          className="h-12 w-full rounded-md border px-3 py-2 text-sm"
+        />
+        {errors.confirmPassword && <p className="text-red-500 text-sm">{errors.confirmPassword.message as string}</p>}
       </div>
-      <Button
-        type="submit"
-        className="h-10 px-[30px] py-[10px] rounded-md bg-gradient-to-b from-[#1C75AD] to-[#083D70]  text-sm font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-        onClick={() => setSent(true)}
-      >
-        {sent ? "Password resetting..." : "Reset Password"}
+
+      <Button type="submit" className="h-10 w-full bg-blue-600 text-white rounded-md hover:bg-blue-700">
+        Reset Password
       </Button>
     </form>
   );

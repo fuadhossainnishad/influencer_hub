@@ -23,32 +23,29 @@ export default function VerifyOtpForm() {
     return () => clearInterval(interval);
   }, []);
 
-  const verifyOtp = async () => {
-    if (otp.some(d => d === "")) {
-      toast.error("Please enter the complete OTP");
-      return;
-    }
+const verifyOtp = async () => {
+  const email = localStorage.getItem("email");
+  if (!email) return toast.error("Email not found");
 
-    const email = localStorage.getItem("email");
-    if (!email) {
-      toast.error("Email not found. Please go back and enter your email.");
-      return;
-    }
+  if (otp.some((d) => d === "")) return toast.error("Complete OTP");
 
+  try {
     const res = await apiCall(TMethods.post, apiList.verifyOtp, {
       email,
       otp: otp.join(""),
     });
 
-    if (!res.success) {
-      toast.error(res.message || "Invalid OTP");
-      return;
-    }
+    if (!res.success) return toast.error(res.message || "Invalid OTP");
     console.log(res);
 
-    toast.success("OTP Verified Successfully!");
-    router.push("/signup");
-  };
+    localStorage.setItem("otp", otp.join("")); // store verified OTP
+    toast.success("OTP verified successfully");
+    router.push("/reset-password");
+  } catch {
+    toast.error("Server error");
+  }
+};
+
 
   const resendOtp = async () => {
     setIsOtpResent(true);

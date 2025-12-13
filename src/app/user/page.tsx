@@ -38,7 +38,7 @@ interface AppliedCampaign {
   thumbnail: string;
   created_at: string;
   status: 'applied' | 'approved' | 'rejected';
-  applied_at: string; // <-- add this
+  applied_at: string;
 }
 
 export default function Dashboard() {
@@ -155,6 +155,7 @@ function CampaignSection({ title, campaigns, userId, applyCampaign }: { title: s
                 width={400}
                 height={200}
                 className="rounded-lg w-full h-40 object-cover"
+                unoptimized
               />
 
               <div className="space-y-1">
@@ -207,11 +208,13 @@ function InfluencerSection({ title, influencers }: { title: string; influencers:
                     ? `http://localhost/influencer_hub_server/${user.profile_image}`
                     : "/user-placeholder.png"
                 }
-                alt={user.name}
+                alt={user.name || "undefinded"}
                 width={300}
                 height={200}
                 className="rounded-lg w-full object-cover h-40"
+                unoptimized
               />
+
 
               <h3 className="font-semibold text-lg">{user.name}</h3>
               <p className="text-sm text-gray-500">@{user.username}</p>
@@ -249,10 +252,11 @@ function AppliedCampaignsSection({ campaigns }: { campaigns: AppliedCampaign[] }
             <CardContent className="p-4 space-y-3 flex flex-col">
               <Image
                 src={`http://localhost/influencer_hub_server/${c.thumbnail}`}
-                alt={c.title}
+                alt={c.title!}
                 width={400}
                 height={200}
                 className="rounded-lg w-full h-40 object-cover"
+                unoptimized
               />
 
               <div className="space-y-1">

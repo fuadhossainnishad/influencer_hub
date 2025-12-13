@@ -4,7 +4,7 @@ const apiList = {
     sendOtp: "/auth/sendOtp.php",
     forgotPassword: "/auth/forgot_password",
     verifyOtp: "/auth/verifyOtp.php",
-    resetPassword: "/auth/reset_password",
+    resetPassword: "/auth/reset_password.php",
     updatePassword: "/auth/update_password",
     createCampaign: "/campaign/createCampaign.php",
     getCampaign: "/campaign/getCampaign.php",

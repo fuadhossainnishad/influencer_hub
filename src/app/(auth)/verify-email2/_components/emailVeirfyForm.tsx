@@ -18,23 +18,26 @@ export default function EmailVeirfyForm() {
     formState: { errors },
   } = useForm();
 
-  const onSubmit = async (data: FieldValues) => {
-    console.log("Email:", data.email);
-    router.push("/verify-otp");
-    localStorage.setItem("email", data.email);
+const onSubmit = async (data: FieldValues) => {
+  try {
     const res = await apiCall(TMethods.post, apiList.sendOtp, data);
-    console.log(res);
 
     if (!res.success) {
-      toast.error("Otp sent failed");
-      setSent(false);
+      toast.error("OTP sending failed");
       return;
     }
+    console.log(res);
 
-    localStorage.setItem("token", res.data.token!);
-    toast.success("Otp sent to your email");
-    router.push("/verify-otp");
-  };
+    localStorage.setItem("email", data.email); // store email
+    localStorage.setItem("otpSent", "true");   // mark that OTP was sent
+    toast.success("OTP sent to your email");
+
+    router.push("/verify-otp"); // navigate only after sending OTP
+  } catch (err) {
+    toast.error("Server error");
+  }
+};
+
 
   return (
     <form

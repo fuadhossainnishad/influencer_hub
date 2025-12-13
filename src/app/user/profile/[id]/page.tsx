@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import axios from "axios";
+import Image from "next/image";
 
-export default function ProfilePage() {
+export default function ProfileByIdPage() {
     const { id } = useParams();
     const [user, setUser] = useState<any>(null);
 
@@ -26,10 +27,13 @@ export default function ProfilePage() {
     return (
         <div className="p-6 max-w-5xl mx-auto space-y-6">
             <div className="flex items-center gap-4">
-                <img
+                <Image
                     src={user.profile_image ? `http://localhost/influencer_hub_server/${user.profile_image}` : "/user-placeholder.png"}
                     alt={user.username}
+                    height={300}
+                    width={300}
                     className="w-32 h-32 rounded-full object-cover"
+                    unoptimized
                 />
                 <div>
                     <h1 className="text-3xl font-bold">{user.username}</h1>

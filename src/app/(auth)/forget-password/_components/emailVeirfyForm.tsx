@@ -21,7 +21,7 @@ export default function EmailVeirfyForm() {
   const onSubmit = async (data: FieldValues) => {
     console.log("Email:", data.email);
     router.push("/verify-otp");
-    sessionStorage.setItem("email", data.email);
+    localStorage.setItem("email", data.email);
     const res = await apiCall(TMethods.post, apiList.forgotPassword, data);
     console.log(res);
 
@@ -31,9 +31,9 @@ export default function EmailVeirfyForm() {
       return;
     }
 
-    sessionStorage.setItem("token", res.data.token);
+    localStorage.setItem("token", res.data.token);
     toast.success("Otp sent to your email");
-    router.push("/verify-otp");
+    router.push("/verify-email2");
   };
 
   return (

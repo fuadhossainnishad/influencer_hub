@@ -3,184 +3,235 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
 import axios from "axios";
-import { getAllCampaigns } from "@/services/campaign.service";
 
 interface Campaign {
-    id: number;
-    title: string;
-    description: string;
-    budget: string;
-    timeline: number;
-    deliverables: string;
-    thumbnail: string;
-    creative: string;
-    created_at: string;
-    user_id: number;
+  id: number;
+  title: string;
+  description: string;
+  budget: string;
+  timeline: number;
+  deliverables: string;
+  thumbnail: string;
+  creative: string;
+  created_at: string;
+  user_id: number;
 }
 
-interface ApplicationsData {
-    total_applied: number;
-    applied_by_current_user: boolean;
+interface ApplicationUser {
+  id: number;
+  name: string;
+  username: string;
+  profile_image?: string;
+  business_category?: string;
+  applied_at: string;
+  status: "applied" | "approved" | "rejected";
 }
 
 export default function CampaignDetailsPage() {
-    const { id } = useParams();
-    const router = useRouter();
-    const [campaign, setCampaign] = useState<Campaign | null>(null);
-    const [applications, setApplications] = useState<ApplicationsData | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [applying, setApplying] = useState(false);
+  const { id } = useParams();
+  const router = useRouter();
+  const [campaign, setCampaign] = useState<Campaign | null>(null);
+  const [applications, setApplications] = useState<ApplicationUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [applying, setApplying] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
+  const [userId, setUserId] = useState<number | null>(null);
 
-    const token = localStorage.getItem("token");
+  // Load token and userId safely on client-side
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedToken = localStorage.getItem("token");
+      const storedUserId = localStorage.getItem("userId");
+      setToken(storedToken);
+      setUserId(storedUserId ? parseInt(storedUserId) : null);
+    }
+  }, []);
 
-    useEffect(() => {
-        if (id) {
-            fetchCampaignDetails(id as string);
-            fetchApplications(id as string);
-        }
-    }, [id]);
+  const isOwner = userId !== null && campaign?.user_id === userId;
 
-    const fetchCampaignDetails = async (id: string) => {
-        try {
-            const response = await getAllCampaigns();
-            const campaignData = response.data.find((c: Campaign) => c.id === Number(id));
-            setCampaign(campaignData || null);
-        } catch (error) {
-            console.error("Error fetching campaign details:", error);
-            setCampaign(null);
-        } finally {
-            setLoading(false);
-        }
-    };
+  // Fetch campaign and applications when id or token changes
+  useEffect(() => {
+    if (id) {
+      fetchCampaign(id as string);
+      if (token) fetchApplications(id as string, token);
+    }
+  }, [id, token]);
 
-    const fetchApplications = async (campaignId: string) => {
-        if (!token) return;
-        try {
-            const res = await axios.get(
-                `http://localhost/influencer_hub_server/campaign/getCampaignApplications.php?campaign_id=${campaignId}`,
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            if (res.data.success) {
-                setApplications(res.data.data);
-            }
-        } catch (error) {
-            console.error("Failed to fetch applications:", error);
-        }
-    };
+  const fetchCampaign = async (campaignId: string) => {
+    try {
+      const res = await axios.get(
+        `http://localhost/influencer_hub_server/campaign/getCampaignById.php?campaign_id=${campaignId}`
+      );
+      if (res.data.success) setCampaign(res.data.data);
+    } catch (err) {
+      console.error("Failed to fetch campaign:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const handleApply = async () => {
-        if (!token || !campaign) return;
-        setApplying(true);
-        try {
-            const formData = new FormData();
-            formData.append("campaign_id", campaign.id.toString());
+  const fetchApplications = async (campaignId: string, token: string) => {
+    try {
+      const res = await axios.get(
+        `http://localhost/influencer_hub_server/campaign/getCampaignApplications.php?campaign_id=${campaignId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data.success) {
+        const apps = Array.isArray(res.data.data) ? res.data.data : [];
+        setApplications(apps);
+      } else {
+        setApplications([]);
+      }
+    } catch (err) {
+      console.error("Failed to fetch applications:", err);
+      setApplications([]);
+    }
+  };
 
-            const res = await axios.post(
-                "http://localhost/influencer_hub_server/campaign/applyCampaign.php",
-                formData,
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+  // Apply to campaign
+  const handleApply = async () => {
+    if (!campaign || !token) return;
+    setApplying(true);
 
-            alert(res.data.message);
+    try {
+      const formData = new FormData();
+      formData.append("campaign_id", campaign.id.toString());
 
-            // Refresh applications after applying
-            fetchApplications(campaign.id.toString());
-        } catch (error) {
-            console.error(error);
-            alert("Failed to apply");
-        } finally {
-            setApplying(false);
-        }
-    };
+      const res = await axios.post(
+        "http://localhost/influencer_hub_server/campaign/applyCampaign.php",
+        formData,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-    if (loading) return <p className="p-6 text-gray-500">Loading campaign details...</p>;
-    if (!campaign) return <p className="p-6 text-red-500">Campaign not found</p>;
+      alert(res.data.message);
+      fetchApplications(campaign.id.toString(), token);
+    } catch (err) {
+      console.error("Failed to apply:", err);
+      alert("Failed to apply");
+    } finally {
+      setApplying(false);
+    }
+  };
 
-    return (
-        <div className="p-6 space-y-8 max-w-5xl mx-auto">
-            {/* Back Button */}
-            <Button variant="outline" onClick={() => router.back()}>
-                ← Back
-            </Button>
+  // Accept or reject an applicant
+  const updateApplicationStatus = async (appId: number, status: "approved" | "rejected") => {
+    if (!token) return;
 
-            {/* Title & Description */}
-            <div className="space-y-2">
-                <h1 className="text-4xl font-bold text-gray-800">{campaign.title}</h1>
-                <p className="text-gray-600">{campaign.description}</p>
-            </div>
+    try {
+      const formData = new FormData();
+      formData.append("application_id", appId.toString());
+      formData.append("status", status);
 
-            {/* Images Section */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                <div className="rounded-lg overflow-hidden shadow-lg">
-                    <h2 className="px-4 py-2 font-semibold bg-gray-100 text-gray-700">Thumbnail</h2>
-                    <Image
-                        src={`http://localhost/influencer_hub_server/${campaign.thumbnail}`}
-                        alt={campaign.title}
-                        width={600}
-                        height={400}
-                        className="w-full h-64 object-cover"
-                    />
-                </div>
+      const res = await axios.post(
+        "http://localhost/influencer_hub_server/campaign/updateApplicationStatus.php",
+        formData,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-                {campaign.creative && (
-                    <div className="rounded-lg overflow-hidden shadow-lg">
-                        <h2 className="px-4 py-2 font-semibold bg-gray-100 text-gray-700">Creative</h2>
-                        <Image
-                            src={`http://localhost/influencer_hub_server/${campaign.creative}`}
-                            alt={campaign.title + " creative"}
-                            width={600}
-                            height={400}
-                            className="w-full h-64 object-cover"
-                        />
+      alert(res.data.message);
+      // Refresh application list
+      fetchApplications(campaign!.id.toString(), token);
+    } catch (err) {
+      console.error("Failed to update status:", err);
+      alert("Failed to update status");
+    }
+  };
+
+  if (loading) return <p className="p-6 text-gray-500">Loading campaign...</p>;
+  if (!campaign) return <p className="p-6 text-red-500">Campaign not found</p>;
+
+  const hasApplied = applications.some(a => a.status === "applied");
+
+  return (
+    <div className="p-6 space-y-8 max-w-5xl mx-auto">
+      <Button variant="outline" onClick={() => router.back()}>← Back</Button>
+
+      <h1 className="text-4xl font-bold">{campaign.title}</h1>
+      <p className="text-gray-600">{campaign.description}</p>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+        <Image
+          src={`http://localhost/influencer_hub_server/${campaign.thumbnail}`}
+          alt={campaign.title}
+          width={600}
+          height={400}
+          className="w-full h-64 object-cover rounded-lg"
+          unoptimized
+        />
+        {campaign.creative && (
+          <Image
+            src={`http://localhost/influencer_hub_server/${campaign.creative}`}
+            alt="Creative"
+            width={600}
+            height={400}
+            className="w-full h-64 object-cover rounded-lg"
+            unoptimized
+          />
+        )}
+      </div>
+
+      <div className="bg-white shadow-md rounded-lg p-6 space-y-4">
+        <p><strong>Budget:</strong> ${campaign.budget}</p>
+        <p><strong>Timeline:</strong> {campaign.timeline} days</p>
+        <p><strong>Deliverables:</strong> {campaign.deliverables}</p>
+        <p><strong>Created At:</strong> {campaign.created_at}</p>
+      </div>
+
+      <div className="bg-white shadow-md rounded-lg p-6 space-y-4">
+        <h2 className="text-2xl font-semibold">Applications</h2>
+
+        {applications.length === 0 ? (
+          <p>No influencers have applied yet.</p>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {applications.map((user) => (
+              <Card key={user.id} className="shadow-sm hover:shadow-md rounded-lg">
+                <CardContent className="p-4 space-y-2 flex flex-col items-center">
+                  <Image
+                    src={user.profile_image ? `http://localhost/influencer_hub_server/${user.profile_image}` : "/user-placeholder.png"}
+                    alt={user.username}
+                    width={200}
+                    height={150}
+                    className="rounded-lg object-cover"
+                    unoptimized
+                  />
+                  <h3 className="font-semibold">{user.name}</h3>
+                  <p className="text-sm text-gray-500">@{user.username}</p>
+                  {user.business_category && <p className="text-sm bg-gray-100 px-2 py-1 rounded">{user.business_category}</p>}
+                  <p className="text-sm text-gray-600">Status: {user.status.toUpperCase()}</p>
+                  <p className="text-xs text-gray-400">Applied: {new Date(user.applied_at).toLocaleDateString()}</p>
+
+                  {isOwner && user.status === "applied" && (
+                    <div className="flex gap-2 mt-2">
+                      <Button
+                        onClick={() => updateApplicationStatus(user.id, "approved")}
+                        className="bg-green-500 text-white hover:bg-green-600"
+                      >
+                        Accept
+                      </Button>
+                      <Button
+                        onClick={() => updateApplicationStatus(user.id, "rejected")}
+                        className="bg-red-500 text-white hover:bg-red-600"
+                      >
+                        Reject
+                      </Button>
                     </div>
-                )}
-            </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
 
-            {/* Campaign Details */}
-            <div className="bg-white shadow-md rounded-lg p-6 space-y-4">
-                <h2 className="text-2xl font-semibold text-gray-800">Campaign Details</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <p>
-                        <span className="font-medium text-gray-700">Budget:</span> ${campaign.budget}
-                    </p>
-                    <p>
-                        <span className="font-medium text-gray-700">Timeline:</span> {campaign.timeline} days
-                    </p>
-                    <p className="md:col-span-2">
-                        <span className="font-medium text-gray-700">Deliverables:</span> {campaign.deliverables}
-                    </p>
-                    <p className="md:col-span-2">
-                        <span className="font-medium text-gray-700">Created At:</span> {campaign.created_at}
-                    </p>
-                </div>
-            </div>
-
-            {/* Applications Info */}
-            {applications && (
-                <div className="bg-white shadow-md rounded-lg p-6 space-y-2">
-                    <h2 className="text-2xl font-semibold text-gray-800">Applications</h2>
-                    <p>
-                        <span className="font-medium">Total Applied:</span> {applications.total_applied}
-                    </p>
-                    <p>
-                        <span className="font-medium">You have applied:</span>{" "}
-                        {applications.applied_by_current_user ? "✅ Yes" : "❌ No"}
-                    </p>
-
-                    {/* Apply Button */}
-                    {!applications.applied_by_current_user && (
-                        <Button
-                            className="mt-3 bg-green-500 text-white hover:bg-green-600"
-                            onClick={handleApply}
-                            disabled={applying}
-                        >
-                            {applying ? "Applying..." : "Apply Now"}
-                        </Button>
-                    )}
-                </div>
-            )}
-        </div>
-    );
+        {!isOwner && !hasApplied && token && (
+          <Button onClick={handleApply} disabled={applying} className="bg-green-500 text-white hover:bg-green-600">
+            {applying ? "Applying..." : "Apply Now"}
+          </Button>
+        )}
+      </div>
+    </div>
+  );
 }
